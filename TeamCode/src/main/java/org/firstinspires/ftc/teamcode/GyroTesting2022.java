@@ -1,56 +1,35 @@
-/* Copyright (c) 2022 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
+import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@Autonomous(name="Main2022Autonomous", preselectTeleOp = "Main2022")
-public class Main2022Autonomous extends LinearOpMode {
+@Autonomous(name = "GyroTesting2022")
+public class GyroTesting2022 extends LinearOpMode{
 
     /* Declare OpMode members. */
-    private DcMotor         frontleft   = null;
-    private DcMotor         frontright  = null;
-    private DcMotor         rearleft = null;
-    private DcMotor         rearright = null;
-    private BNO055IMU       imu         = null;      // Control/Expansion Hub IMU
+    private DcMotor            frontleft   = null;
+    private DcMotor            frontright  = null;
+    private DcMotor            rearleft = null;
+    private DcMotor            rearright = null;
+    private IMU                imu;   // Control/Expansion Hub IMU
+    private Servo              left;
+    private Servo              right;
+    private DcMotor            lift4front;
+    private DcMotor            lift5rear;
+    private VuforiaCurrentGame vuforiaPOWERPLAY;
+    private Tfod tfod;
 
     private double          robotHeading  = 0;
     private double          headingOffset = 0;
@@ -114,10 +93,13 @@ public class Main2022Autonomous extends LinearOpMode {
         rearright.setDirection(DcMotor.Direction.FORWARD);
 
         // define initialization values for IMU, and then initialize it.
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit            = BNO055IMU.AngleUnit.DEGREES;
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(parameters);
+        imu = hardwareMap.get(IMU.class, "imu");
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD;
+        RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.UP;
+
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
+
+        imu.initialize(new IMU.Parameters(orientationOnRobot));
 
         // Ensure the robot is stationary.  Reset the encoders and set the motors to BRAKE mode
         frontleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -152,27 +134,6 @@ public class Main2022Autonomous extends LinearOpMode {
 
     }
 
-    /*
-     * ====================================================================================================
-     * Driving "Helper" functions are below this line.
-     * These provide the high and low level methods that handle driving straight and turning.
-     * ====================================================================================================
-     */
-
-    // **********  HIGH Level driving functions.  ********************
-
-    /**
-     *  Method to drive in a straight line, on a fixed compass heading (angle), based on encoder counts.
-     *  Move will stop if either of these conditions occur:
-     *  1) Move gets to the desired position
-     *  2) Driver stops the opmode running.
-     *
-     * @param maxDriveSpeed MAX Speed for forward/rev motion (range 0 to +1.0) .
-     * @param distance   Distance (in inches) to move from current position.  Negative distance means move backward.
-     * @param heading      Absolute Heading Angle (in Degrees) relative to last gyro reset.
-     *                   0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *                   If a relative angle is required, add/subtract from the current robotHeading.
-     */
     public void driveStraight(double maxDriveSpeed,
                               double distance,
                               double heading) {
@@ -234,17 +195,6 @@ public class Main2022Autonomous extends LinearOpMode {
         }
     }
 
-    /**
-     *  Method to spin on central axis to point in a new direction.
-     *  Move will stop if either of these conditions occur:
-     *  1) Move gets to the heading (angle)
-     *  2) Driver stops the opmode running.
-     *
-     * @param maxTurnSpeed Desired MAX speed of turn. (range 0 to +1.0)
-     * @param heading Absolute Heading Angle (in Degrees) relative to last gyro reset.
-     *              0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *              If a relative angle is required, add/subtract from current heading.
-     */
     public void turnToHeading(double maxTurnSpeed, double heading) {
 
         // Run getSteeringCorrection() once to pre-calculate the current error
@@ -270,17 +220,6 @@ public class Main2022Autonomous extends LinearOpMode {
         moveRobot(0, 0);
     }
 
-    /**
-     *  Method to obtain & hold a heading for a finite amount of time
-     *  Move will stop once the requested time has elapsed
-     *  This function is useful for giving the robot a moment to stabilize it's heading between movements.
-     *
-     * @param maxTurnSpeed      Maximum differential turn speed (range 0 to +1.0)
-     * @param heading    Absolute Heading Angle (in Degrees) relative to last gyro reset.
-     *                   0 = fwd. +ve is CCW from fwd. -ve is CW from forward.
-     *                   If a relative angle is required, add/subtract from current heading.
-     * @param holdTime   Length of time (in seconds) to hold the specified heading.
-     */
     public void holdHeading(double maxTurnSpeed, double heading, double holdTime) {
 
         ElapsedTime holdTimer = new ElapsedTime();
@@ -305,15 +244,7 @@ public class Main2022Autonomous extends LinearOpMode {
         moveRobot(0, 0);
     }
 
-    // **********  LOW Level driving functions.  ********************
 
-    /**
-     * This method uses a Proportional Controller to determine how much steering correction is required.
-     *
-     * @param desiredHeading        The desired absolute heading (relative to last heading reset)
-     * @param proportionalGain      Gain factor applied to heading error to obtain turning power.
-     * @return                      Turning power needed to get to required heading.
-     */
     public double getSteeringCorrection(double desiredHeading, double proportionalGain) {
         targetHeading = desiredHeading;  // Save for telemetry
 
@@ -330,13 +261,76 @@ public class Main2022Autonomous extends LinearOpMode {
         // Multiply the error by the gain to determine the required steering correction/  Limit the result to +/- 1.0
         return Range.clip(headingError * proportionalGain, -1, 1);
     }
+    private void gripper(int status) {
+        if (status == 0) {
+            left.setPosition(0.66);
+            right.setPosition(0.37);
+        } else if (status == 1) {
+            left.setPosition(0.02);
+            right.setPosition(1);
+        } else {
+        }
+        sleep(1000);
+    }
 
-    /**
-     * This method takes separate drive (fwd/rev) and turn (right/left) requests,
-     * combines them, and applies the appropriate speed commands to the left and right wheel motors.
-     * @param drive forward motor speed
-     * @param turn  clockwise turning motor speed.
-     */
+    private void lift(int status, double speed) {
+        if (status == 0) {
+            lift4front.setPower(0);
+            lift5rear.setPower(0);
+            lift4front.setTargetPosition(0);
+            lift5rear.setTargetPosition(0);
+        } else if (status == 1) {
+            lift4front.setPower(speed);
+            lift5rear.setPower(speed);
+            lift4front.setTargetPosition(-610);
+            lift5rear.setTargetPosition(610);
+        } else if (status == 2) {
+            lift4front.setPower(speed);
+            lift5rear.setPower(speed);
+            lift4front.setTargetPosition(-1075);
+            lift5rear.setTargetPosition(1075);
+        } else if (status == 3) {
+            lift4front.setPower(speed);
+            lift5rear.setPower(speed);
+            lift4front.setTargetPosition(-1460);
+            lift5rear.setTargetPosition(1460);
+        } else if (status == 4) {
+            lift4front.setTargetPosition(0);
+            lift5rear.setTargetPosition(0);
+        }
+    }
+
+    private void strafe(double distance, double speed) {
+        double strafeEncoderDistance;
+        double strafeSpeed;
+
+        strafeEncoderDistance = distance * 45.125;
+        strafeSpeed = speed;
+        frontleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontright.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rearleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rearright.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rearleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rearright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontleft.setPower(-driveSpeed);
+        frontright.setPower(driveSpeed);
+        rearleft.setPower(driveSpeed);
+        rearright.setPower(-driveSpeed);
+        while (Math.abs(frontleft.getCurrentPosition()) < Math.abs(strafeEncoderDistance - 100) && opModeIsActive()) {
+            telemetry.addData("Strafing to", strafeEncoderDistance);
+            telemetry.addData("At Speed", strafeSpeed);
+            telemetry.addData("Currently at:", frontleft.getCurrentPosition());
+            telemetry.update();
+        }
+        frontleft.setPower(0);
+        frontright.setPower(0);
+        rearleft.setPower(0);
+        rearright.setPower(0);
+        sleep(500);
+    }
+
     public void moveRobot(double drive, double turn) {
         driveSpeed = drive;     // save this value as a class member so it can be used by telemetry.
         turnSpeed  = turn;      // save this value as a class member so it can be used by telemetry.
@@ -362,11 +356,7 @@ public class Main2022Autonomous extends LinearOpMode {
         rearright.setPower(rearrightSpeed);
     }
 
-    /**
-     *  Display the various control parameters while driving
-     *
-     * @param straight  Set to true if we are driving straight, and the encoder positions should be included in the telemetry.
-     */
+
     private void sendTelemetry(boolean straight) {
 
         if (straight) {
@@ -385,7 +375,7 @@ public class Main2022Autonomous extends LinearOpMode {
      * read the raw (un-offset Gyro heading) directly from the IMU
      */
     public double getRawHeading() {
-        Orientation angles   = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         return angles.firstAngle;
     }
 
