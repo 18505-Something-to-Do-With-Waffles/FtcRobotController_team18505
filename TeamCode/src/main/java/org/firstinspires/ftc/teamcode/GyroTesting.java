@@ -1,23 +1,29 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
-import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import com.qualcomm.robotcore.util.Range;
+import java.util.List;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.JavaUtil;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 
-@Autonomous(name = "GyroTesting2022")
-public class GyroTesting2022 extends LinearOpMode{
+@Disabled
+@Autonomous(name = "GyroTesting", preselectTeleOp = "Main2022")
+public class GyroTesting extends LinearOpMode{
 
   /* Declare OpMode members. */
   private DcMotor            frontleft   = null;
@@ -30,7 +36,7 @@ public class GyroTesting2022 extends LinearOpMode{
   private DcMotor            lift4front;
   private DcMotor            lift5rear;
   private VuforiaCurrentGame vuforiaPOWERPLAY;
-  private Tfod tfod;
+  private Tfod               tfod;
 
   private double          robotHeading  = 0;
   private double          headingOffset = 0;
@@ -65,8 +71,8 @@ public class GyroTesting2022 extends LinearOpMode{
   // These constants define the desired driving/control characteristics
   // They can/should be tweaked to suit the specific robot drive train.
   static final double     DRIVE_SPEED             = 0.4;     // Max driving speed for better distance accuracy.
-  static final double     TURN_SPEED              = 0.2;     // Max Turn speed to limit turn rate
-  static final double     HEADING_THRESHOLD       = 100.0 ;    // How close must the heading get to the target before moving to next step.
+  static final double     TURN_SPEED              = 0.2;    // Max Turn speed to limit turn rate
+  static final double     HEADING_THRESHOLD       = 10;     // How close must the heading get to the target before moving to next step.
   // Requiring more accuracy (a smaller number) will often make the turn take longer to get into the final position.
   // Define the Proportional control coefficient (or GAIN) for "heading control".
   // We define one value when Turning (larger errors), and the other is used when Driving straight (smaller errors).
@@ -75,15 +81,22 @@ public class GyroTesting2022 extends LinearOpMode{
   static final double     P_TURN_GAIN            = 0.02;     // Larger is more responsive, but also less stable
   static final double     P_DRIVE_GAIN           = 0.03;     // Larger is more responsive, but also less stable
 
-
+  int coneNumber;
+  
   @Override
   public void runOpMode() {
-
+      int coneNumber = 0;
       // Initialize the drive system variables.
-      frontleft  = hardwareMap.get(DcMotor.class, "frontleft");
+      frontleft = hardwareMap.get(DcMotor.class, "frontleft");
       frontright = hardwareMap.get(DcMotor.class, "frontright");
-      rearleft  = hardwareMap.get(DcMotor.class, "rearleft");
+      rearleft = hardwareMap.get(DcMotor.class, "rearleft");
       rearright = hardwareMap.get(DcMotor.class, "rearright");
+      left = hardwareMap.get(Servo.class, "left");
+      right = hardwareMap.get(Servo.class, "right");
+      lift4front = hardwareMap.get(DcMotor.class, "lift4front");
+      lift5rear = hardwareMap.get(DcMotor.class, "lift5rear");
+      vuforiaPOWERPLAY = new VuforiaCurrentGame();
+      tfod = new Tfod();
 
       // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
       // When run, this OpMode should start both motors driving forward. So adjust these two lines based on your first test drive.
@@ -92,6 +105,9 @@ public class GyroTesting2022 extends LinearOpMode{
       frontright.setDirection(DcMotor.Direction.FORWARD);
       rearleft.setDirection(DcMotor.Direction.REVERSE);
       rearright.setDirection(DcMotor.Direction.FORWARD);
+      
+      lift4front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      lift5rear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
       // define initialization values for IMU, and then initialize it.
       imu = hardwareMap.get(IMU.class, "imu");
@@ -112,14 +128,42 @@ public class GyroTesting2022 extends LinearOpMode{
       rearleft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
       rearright.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-
-
       // Wait for the game to start (Display Gyro value while waiting)
-      while (opModeInInit()) {
-          telemetry.addData(">", "Robot Heading = %4.0f", getRawHeading());
-          telemetry.update();
-      }
+      telemetry.addData(">", "Robot Heading = %4.0f", getRawHeading());
+      telemetry.addData("init", 1);
+      telemetry.update();
+      waitForStart();
+      coneNumber = readCone();
+      telemetry.addData("Reading Cone", coneNumber);
+      telemetry.update();
+      
+      
+      gripper(0);
+      gripper(1);
+      driveStraight(0.15,1,0);
+      turnToHeading(0.3,-48);
+      lift(1,0.5);
+      driveStraight(0.3,7.5,0);
+      gripper(0);
+      driveStraight(0.3,-7.5,0);
+      lift(0,0.5);
+      turnToHeading(0.3,0);
+      driveStraight(0.15,-1,0);
 
+      if (coneNumber == 1){
+        driveStraight(0.3,27,0);
+        turnToHeading(0.3, 90);
+        driveStraight(0.3, -23,0);
+        gripper(0);
+      } else if (coneNumber == 2) {
+        driveStraight(0.3, 33,0);
+      } else if (coneNumber == 3) {
+        driveStraight(0.3, 27,0);
+        turnToHeading(0.3, 90);
+        driveStraight(0.3, 15,0);
+        gripper(0);
+        driveStraight(0.3, 6.5,0);
+      }
 
 
       // Set the encoders for closed loop speed control
@@ -130,9 +174,115 @@ public class GyroTesting2022 extends LinearOpMode{
 
       resetHeading(); // reset heading
 
-      turnToHeading(0.4, 45);
-      driveStraight(0.4, 48, 0);
-
+      
+  }
+  
+  private int readCone() {
+    int colorIterable;
+    int cameraReads = 0;
+    int colorFound;
+    List<Recognition> recognitions;
+    Recognition recognition;
+    int lastread = 0;
+    int colorConfirm = 0;
+    if(vuforiaPOWERPLAY == null){
+      telemetry.addData("vf","true");
+      telemetry.update();
+    }
+    sleep(5000);
+    
+    vuforiaPOWERPLAY.initialize(
+        "", // vuforiaLicenseKey
+        hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
+        "", // webcamCalibrationFilename
+        false, // useExtendedTracking
+        true, // enableCameraMonitoring
+        VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES, // cameraMonitorFeedback
+        0, // dx
+        0, // dy
+        0, // dz
+        AxesOrder.XZY, // axesOrder
+        90, // firstAngle
+        90, // secondAngle
+        0, // thirdAngle
+        true); // useCompetitionFieldTargetLocations
+    // Set isModelTensorFlow2 to true if you used a TensorFlow
+    // 2 tool, such as ftc-ml, to create the model.
+    //
+    // Set isModelQuantized to true if the model is
+    // quantized. Models created with ftc-ml are quantized.
+    //
+    // Set inputSize to the image size corresponding to the model.
+    // If your model is based on SSD MobileNet v2
+    // 320x320, the image size is 300 (srsly!).
+    // If your model is based on SSD MobileNet V2 FPNLite 320x320, the image size is 320.
+    // If your model is based on SSD MobileNet V1 FPN 640x640 or
+    // SSD MobileNet V2 FPNLite 640x640, the image size is 640.
+    tfod.useModelFromFile("model_20221228_153128.tflite", JavaUtil.createListWith("blue", "green", "red"), true, true, 320);
+    tfod.initialize(vuforiaPOWERPLAY, (float) 0.55, true, true);
+    tfod.setClippingMargins(0, 0, 0, 0);
+    tfod.activate();
+    // Enable following block to zoom in on target.
+    tfod.setZoom(1.6, 1 / 1);
+    telemetry.addData("init", 2);
+    telemetry.update();
+    colorFound = 0;
+    resetRuntime();
+    while (colorFound == 0 && opModeIsActive()) {
+      // Get a list of recognitions from TFOD.
+      recognitions = tfod.getRecognitions();
+      // If list is empty, inform the user. Otherwise, go
+      // through list and display info for each recognition.
+      if (JavaUtil.listLength(recognitions) == 0) {
+        telemetry.addData("TFOD", "No items detected.");
+      } else {
+        // Iterate through list and call a function to
+        // display info for each recognized object.
+        colorIterable = 0;
+        for (Recognition recognition_item : recognitions) {
+          colorIterable += 1;
+          recognition = recognition_item;
+          if (recognition.getLabel().equals("green") && recognition.getConfidence() > 0.85) {
+            if (lastread == 3) {
+              colorConfirm += 1;
+              break;
+            } else {
+              colorConfirm = 0;
+            }
+            lastread = 3;
+          } else if (recognition.getLabel().equals("red") && recognition.getConfidence() > 0.55) {
+            if (lastread == 1) {
+              colorConfirm += 1;
+              break;
+            } else {
+              colorConfirm = 0;
+            }
+            lastread = 1;
+          } else if (colorIterable == recognitions.size()) {
+            if (lastread == 2) {
+              colorConfirm += 1;
+            } else {
+              colorConfirm = 0;
+            }
+            lastread = 2;
+          }
+        }
+        if (lastread == 1 &&(getRuntime()>=10 || colorConfirm >= 5)) {
+          cameraReads = 1;
+          colorFound = 1;
+        } else if (lastread == 2 &&(getRuntime()>=10 || colorConfirm >= 5)) {
+          cameraReads = 2;
+          colorFound = 1;
+        } else if (lastread == 3 &&(getRuntime()>=10 || colorConfirm >= 5)) {
+          cameraReads = 3;
+          colorFound = 1;
+        } /*else {
+          colorFound = 0;
+        }*/
+      }
+      telemetry.update();
+    }
+    return cameraReads;
   }
   
   public void driveStraight(double maxDriveSpeed,
@@ -172,7 +322,7 @@ public class GyroTesting2022 extends LinearOpMode{
               //tick += 1;
               //telemetry.addData("tick", tick);
               //telemetry.update();
-              // Determine required steering to keep on heading
+              //Determine required steering to keep on heading
               turnSpeed = getSteeringCorrection(heading, P_DRIVE_GAIN);
 
               // if driving in reverse, the motor correction also needs to be reversed
@@ -180,7 +330,7 @@ public class GyroTesting2022 extends LinearOpMode{
                   turnSpeed *= -1.0;
 
               // Apply the turning correction to the current driving speed.
-              moveRobot(driveSpeed, turnSpeed);
+              moveRobot(driveSpeed, 0);
 
               // Display drive status for the driver.
               sendTelemetry(true);
@@ -194,10 +344,11 @@ public class GyroTesting2022 extends LinearOpMode{
           rearleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
           rearright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
       }
+      
   }
 
   public void turnToHeading(double maxTurnSpeed, double heading) {
-
+      heading = -heading;
       // Run getSteeringCorrection() once to pre-calculate the current error
       getSteeringCorrection(heading, P_DRIVE_GAIN);
 
@@ -212,13 +363,15 @@ public class GyroTesting2022 extends LinearOpMode{
 
           // Pivot in place by applying the turning correction
           moveRobot(0, turnSpeed);
-
+          
           // Display drive status for the driver.
           sendTelemetry(false);
+
       }
 
       // Stop all motion;
       moveRobot(0, 0);
+
   }
 
   public void holdHeading(double maxTurnSpeed, double heading, double holdTime) {
@@ -253,7 +406,7 @@ public class GyroTesting2022 extends LinearOpMode{
       robotHeading = getRawHeading() - headingOffset;
 
       // Determine the heading current error
-      headingError = targetHeading - robotHeading;
+      headingError =  targetHeading - robotHeading;
 
       // Normalize the error to be within +/- 180 degrees
       while (headingError > 180)  headingError -= 360;
@@ -275,29 +428,31 @@ public class GyroTesting2022 extends LinearOpMode{
   }
   
   private void lift(int status, double speed) {
+    int liftEncoderDistance = 0;
     if (status == 0) {
-      lift4front.setPower(0);
-      lift5rear.setPower(0);
-      lift4front.setTargetPosition(0);
-      lift5rear.setTargetPosition(0);
+      liftEncoderDistance = 0;
     } else if (status == 1) {
-      lift4front.setPower(speed);
-      lift5rear.setPower(speed);
-      lift4front.setTargetPosition(-610);
-      lift5rear.setTargetPosition(610);
+      liftEncoderDistance = 610;
     } else if (status == 2) {
-      lift4front.setPower(speed);
-      lift5rear.setPower(speed);
-      lift4front.setTargetPosition(-1075);
-      lift5rear.setTargetPosition(1075);
+      liftEncoderDistance = 1075;
     } else if (status == 3) {
-      lift4front.setPower(speed);
-      lift5rear.setPower(speed);
-      lift4front.setTargetPosition(-1460);
-      lift5rear.setTargetPosition(1460);
+      liftEncoderDistance = 1460;
     } else if (status == 4) {
       lift4front.setTargetPosition(0);
       lift5rear.setTargetPosition(0);
+    }
+    while (Math.abs(lift5rear.getCurrentPosition()-liftEncoderDistance)>10 && opModeIsActive()) {
+      lift4front.setPower(speed);
+      lift5rear.setPower(speed);
+      lift4front.setTargetPosition(-liftEncoderDistance);
+      lift5rear.setTargetPosition(liftEncoderDistance);
+      lift4front.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      lift5rear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      
+      telemetry.addData("Lifting to", liftEncoderDistance);
+      telemetry.addData("At Speed", speed);
+      telemetry.addData("Currently at", lift5rear.getCurrentPosition());
+      telemetry.update();
     }
   }
   
@@ -336,10 +491,10 @@ public class GyroTesting2022 extends LinearOpMode{
       driveSpeed = drive;     // save this value as a class member so it can be used by telemetry.
       turnSpeed  = turn;      // save this value as a class member so it can be used by telemetry.
 
-      frontleftSpeed  = drive + turn;
-      frontrightSpeed = drive - turn;
-      rearleftSpeed = drive + turn;
-      rearrightSpeed = drive - turn;
+      frontleftSpeed  = drive - turn;
+      frontrightSpeed = drive + turn;
+      rearleftSpeed = drive - turn;
+      rearrightSpeed = drive + turn;
 
       // Scale speeds down if either one exceeds +/- 1.0;
       double max = Math.max(Math.abs(frontleftSpeed), Math.abs(frontrightSpeed));
@@ -376,8 +531,8 @@ public class GyroTesting2022 extends LinearOpMode{
    * read the raw (un-offset Gyro heading) directly from the IMU
    */
   public double getRawHeading() {
-      //Orientation angles = imu.getRobotYawPitchRollAngles.();
-      return 1;//angles.firstAngle;
+      YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+      return orientation.getYaw(AngleUnit.DEGREES);
   }
 
   /**
