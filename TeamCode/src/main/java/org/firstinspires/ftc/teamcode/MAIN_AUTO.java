@@ -14,10 +14,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 
-@Autonomous(name = "LeftSideAuto", preselectTeleOp = "Main2022")
-public class LeftSideAuto extends LinearOpMode {
-
-  GyroTesting gyro = new GyroTesting();
+@Autonomous(name = "MAIN_AUTO", preselectTeleOp = "Main2022")
+public class MAIN_AUTO extends LinearOpMode {
 
   private DcMotor frontleft;
   private DcMotor frontright;
@@ -184,19 +182,7 @@ public class LeftSideAuto extends LinearOpMode {
   /**
    * Describe this function...
    */
-  private int readCone() {
-    int colorIterable;
-    int cameraReads = 0;
-    List<Recognition> recognitions;
-    Recognition recognition;
-    int lastread = 0;
-    int colorConfirm = 0;
-    double highestConfidence = 0;
-    if(vuforiaPOWERPLAY == null){
-      telemetry.addData("vf","true");
-      telemetry.update();
-    }
-
+  private void cameraInit() {
     vuforiaPOWERPLAY.initialize(
         "", // vuforiaLicenseKey
         hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
@@ -230,7 +216,21 @@ public class LeftSideAuto extends LinearOpMode {
     tfod.activate();
     // Enable following block to zoom in on target.
     tfod.setZoom(1.6, 1 / 1);
-    tfod.setZoom(1.6, 1 / 1);
+  }
+  private int readCone() {
+    int colorIterable;
+    int cameraReads = 0;
+    List<Recognition> recognitions;
+    Recognition recognition;
+    int lastread = 0;
+    int colorConfirm = 0;
+    double highestConfidence = 0;
+    if(vuforiaPOWERPLAY == null){
+      telemetry.addData("vf","true");
+      telemetry.update();
+    }
+
+    
     telemetry.addData("init", 2);
     telemetry.update();
     resetRuntime();
@@ -239,7 +239,7 @@ public class LeftSideAuto extends LinearOpMode {
       recognitions = tfod.getRecognitions();
       for (Recognition recognition_item : recognitions) {
         recognition = recognition_item;
-        if (recognition_item.getLabel().equals("green")){
+        if (recognition_item.getLabel().equals("green") && recognition_item.getConfidence() > .85){
           if (recognition_item.getConfidence() > highestConfidence) {
             cameraReads = 3;
             highestConfidence = recognition.getConfidence();
@@ -265,6 +265,7 @@ public class LeftSideAuto extends LinearOpMode {
   @Override
   public void runOpMode() {
     double coneNumber;
+    int version = 0;
 
     frontleft = hardwareMap.get(DcMotor.class, "frontleft");
     frontright = hardwareMap.get(DcMotor.class, "frontright");
@@ -282,26 +283,50 @@ public class LeftSideAuto extends LinearOpMode {
     lift4front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     lift5rear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     telemetry.addData("init", 1);
-    
+
+    while(version == 0){
+      if (gamepad1.dpad_left){
+        version = 1;
+      } else if (gamepad1.dpad_right){
+        version = 2;
+      }
+    }
+
+    cameraInit();
+    telemetry.addData("Program Version", version);
     telemetry.update();
     waitForStart();
     coneNumber = readCone();
     telemetry.addData("Reading Cone", coneNumber);
+    telemetry.addData("Program Version", version);
     telemetry.update();
 
-    gyro.driveStraight(0.3,100,0);
 
-    gripper(0);
-    gripper(1);
-    drive(3,0.3);
-    pivot(45,0.3);
-    lift(1,0.5);
-    drive(6,0.3);
-    gripper(0);
-    lift(0,0.5);
-    drive(6,-0.3);
-    pivot(45,-0.3);
-    drive(3,-0.3);
+    if (version == 2) {
+      gripper(0);
+      gripper(1);
+      drive(3, 0.3);
+      pivot(45, -0.3);
+      lift(1, 0.5);
+      drive(7.2, 0.3);
+      gripper(0);
+      lift(0, 0.5);
+      drive(7.2, -0.3);
+      pivot(45, 0.3);
+      drive(3, -0.3);
+    } else if (version == 1) {
+      gripper(0);
+      gripper(1);
+      drive(3,0.3);
+      pivot(45,0.3);
+      lift(1,0.5);
+      drive(6,0.3);
+      gripper(0);
+      lift(0,0.5);
+      drive(6,-0.3);
+      pivot(45,-0.3);
+      drive(3,-0.3);
+    }
     
     if (coneNumber == 1) {
       drive(27, 0.3);
