@@ -130,41 +130,8 @@ public class GyroTesting extends LinearOpMode{
 
       // Wait for the game to start (Display Gyro value while waiting)
       telemetry.addData(">", "Robot Heading = %4.0f", getRawHeading());
-      telemetry.addData("init", 1);
       telemetry.update();
       waitForStart();
-      coneNumber = readCone();
-      telemetry.addData("Reading Cone", coneNumber);
-      telemetry.update();
-      
-      
-      gripper(0);
-      gripper(1);
-      driveStraight(0.15,1,0);
-      turnToHeading(0.3,-48);
-      lift(1,0.5);
-      driveStraight(0.3,7.5,0);
-      gripper(0);
-      driveStraight(0.3,-7.5,0);
-      lift(0,0.5);
-      turnToHeading(0.3,0);
-      driveStraight(0.15,-1,0);
-
-      if (coneNumber == 1){
-        driveStraight(0.3,27,0);
-        turnToHeading(0.3, 90);
-        driveStraight(0.3, -23,0);
-        gripper(0);
-      } else if (coneNumber == 2) {
-        driveStraight(0.3, 33,0);
-      } else if (coneNumber == 3) {
-        driveStraight(0.3, 27,0);
-        turnToHeading(0.3, 90);
-        driveStraight(0.3, 15,0);
-        gripper(0);
-        driveStraight(0.3, 6.5,0);
-      }
-
 
       // Set the encoders for closed loop speed control
       frontleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -177,114 +144,7 @@ public class GyroTesting extends LinearOpMode{
       
   }
   
-  private int readCone() {
-    int colorIterable;
-    int cameraReads = 0;
-    int colorFound;
-    List<Recognition> recognitions;
-    Recognition recognition;
-    int lastread = 0;
-    int colorConfirm = 0;
-    if(vuforiaPOWERPLAY == null){
-      telemetry.addData("vf","true");
-      telemetry.update();
-    }
-    sleep(5000);
-    
-    vuforiaPOWERPLAY.initialize(
-        "", // vuforiaLicenseKey
-        hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
-        "", // webcamCalibrationFilename
-        false, // useExtendedTracking
-        true, // enableCameraMonitoring
-        VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES, // cameraMonitorFeedback
-        0, // dx
-        0, // dy
-        0, // dz
-        AxesOrder.XZY, // axesOrder
-        90, // firstAngle
-        90, // secondAngle
-        0, // thirdAngle
-        true); // useCompetitionFieldTargetLocations
-    // Set isModelTensorFlow2 to true if you used a TensorFlow
-    // 2 tool, such as ftc-ml, to create the model.
-    //
-    // Set isModelQuantized to true if the model is
-    // quantized. Models created with ftc-ml are quantized.
-    //
-    // Set inputSize to the image size corresponding to the model.
-    // If your model is based on SSD MobileNet v2
-    // 320x320, the image size is 300 (srsly!).
-    // If your model is based on SSD MobileNet V2 FPNLite 320x320, the image size is 320.
-    // If your model is based on SSD MobileNet V1 FPN 640x640 or
-    // SSD MobileNet V2 FPNLite 640x640, the image size is 640.
-    tfod.useModelFromFile("model_20221228_153128.tflite", JavaUtil.createListWith("blue", "green", "red"), true, true, 320);
-    tfod.initialize(vuforiaPOWERPLAY, (float) 0.55, true, true);
-    tfod.setClippingMargins(0, 0, 0, 0);
-    tfod.activate();
-    // Enable following block to zoom in on target.
-    tfod.setZoom(1.6, 1 / 1);
-    telemetry.addData("init", 2);
-    telemetry.update();
-    colorFound = 0;
-    resetRuntime();
-    while (colorFound == 0 && opModeIsActive()) {
-      // Get a list of recognitions from TFOD.
-      recognitions = tfod.getRecognitions();
-      // If list is empty, inform the user. Otherwise, go
-      // through list and display info for each recognition.
-      if (JavaUtil.listLength(recognitions) == 0) {
-        telemetry.addData("TFOD", "No items detected.");
-      } else {
-        // Iterate through list and call a function to
-        // display info for each recognized object.
-        colorIterable = 0;
-        for (Recognition recognition_item : recognitions) {
-          colorIterable += 1;
-          recognition = recognition_item;
-          if (recognition.getLabel().equals("green") && recognition.getConfidence() > 0.85) {
-            if (lastread == 3) {
-              colorConfirm += 1;
-              break;
-            } else {
-              colorConfirm = 0;
-            }
-            lastread = 3;
-          } else if (recognition.getLabel().equals("red") && recognition.getConfidence() > 0.55) {
-            if (lastread == 1) {
-              colorConfirm += 1;
-              break;
-            } else {
-              colorConfirm = 0;
-            }
-            lastread = 1;
-          } else if (colorIterable == recognitions.size()) {
-            if (lastread == 2) {
-              colorConfirm += 1;
-            } else {
-              colorConfirm = 0;
-            }
-            lastread = 2;
-          }
-        }
-        if (lastread == 1 &&(getRuntime()>=10 || colorConfirm >= 5)) {
-          cameraReads = 1;
-          colorFound = 1;
-        } else if (lastread == 2 &&(getRuntime()>=10 || colorConfirm >= 5)) {
-          cameraReads = 2;
-          colorFound = 1;
-        } else if (lastread == 3 &&(getRuntime()>=10 || colorConfirm >= 5)) {
-          cameraReads = 3;
-          colorFound = 1;
-        } /*else {
-          colorFound = 0;
-        }*/
-      }
-      telemetry.update();
-    }
-    return cameraReads;
-  }
-  
+
   public void driveStraight(double maxDriveSpeed,
                             double distance,
                             double heading) {
