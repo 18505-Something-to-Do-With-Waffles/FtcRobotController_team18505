@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import android.util.Log;
 
 @TeleOp(name = "simpleTest")
-public class simpleTest extends LinearOpMode {
+public class Backup_simpleTest extends LinearOpMode {
 
     /**
      * This function is executed when this Op Mode is selected from the Driver Station.
