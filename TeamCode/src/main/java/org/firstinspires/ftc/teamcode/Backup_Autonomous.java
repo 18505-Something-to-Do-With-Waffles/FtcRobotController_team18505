@@ -26,9 +26,9 @@ public class Backup_Autonomous extends LinearOpMode {
 
 
         // Do stuff
-        robot.imu.resetHeading();
+        robot.resetHeading();
         while (opModeIsActive()) {
-            telemetry.addData("Heading: ", robot.imu.getHeading());
+            telemetry.addData("Heading: ", robot.getHeading());
             telemetry.update();
             sleep(1000);
         }

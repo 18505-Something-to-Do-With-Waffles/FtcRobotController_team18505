@@ -189,7 +189,7 @@ public class Backup_Robot {
     private GripSystem gripSystem;
 
     // Instantiate IMU System
-    public IMUSystem imu;
+    private IMUSystem imu;
 
     // Instantiate DeadWheelEncoder System
     private DeadWheelEncoderSystem dwEncoder;
@@ -228,10 +228,14 @@ public class Backup_Robot {
         vision = new VisionSystem(hardwareMap);
     }
 
-    /*
-    Should modify the below so that it doesn't need x,y,r parameters.
-    Instead, it should get values from the Controller object.
-    */
+    public double getHeading() {
+        return this.imu.getHeading();
+    }
+
+    public void resetHeading() {
+        this.imu.resetHeading();
+    }
+
     public void teleDrive(Controller controller) {
         double speedMultiplier = 1;
         /* [TBD] adjust speedMultiplier based on lift position */
@@ -269,7 +273,7 @@ public class Backup_Robot {
         /* Sets lift position to a new discrete position found
            in the posEncoderVal array. */
         int newEncoderVal = this.posEncoderVal[newLiftPos];
-        liftSystem.setLiftEncoderPos(newEncoderVal);
+        this.liftSystem.setLiftEncoderPos(newEncoderVal);
         this.liftPos = newLiftPos;
     }
 
@@ -287,5 +291,13 @@ public class Backup_Robot {
         // [TBD] may need to update this.liftPos, depending on if 4 represents new position
     }
 
-    // [TBD] Define robot-level grip behaviors here
+    public void teleLift(Controller controller) {
+        // Wrapper function which will call both teleop modes of lift operation
+        this.teleSetLiftPos(controller);
+        this.teleAdjustLiftPos(controller);
+    }
+
+    public void teleGripper(Controller controller) {
+        // Use controller variables to call this.gripperSystem methods
+    }
 }

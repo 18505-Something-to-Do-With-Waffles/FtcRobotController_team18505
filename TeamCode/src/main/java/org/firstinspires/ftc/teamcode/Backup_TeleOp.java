@@ -30,10 +30,11 @@ public class Backup_TeleOp extends LinearOpMode {
 
             while (opModeIsActive()) {
 
-                robot.teleDrive(controller1);
-                //gripper();
-                //lift();
                 telemetry.update();
+                robot.teleDrive(controller1);
+                //robot.teleGripper();
+                //robot.teleLift();
+
             }
         }
     }
