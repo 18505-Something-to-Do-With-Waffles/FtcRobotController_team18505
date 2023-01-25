@@ -8,9 +8,9 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 
 @Disabled
-@Autonomous(name = "Backup_Autonomous")
-public class Backup_Autonomous extends LinearOpMode {
-
+@Autonomous(name = "Autonomous_Left")
+public class Autonomous_Left extends LinearOpMode {
+    private char side = 'L';
     public void runOpMode() {
 
         // Instantiate stuff
@@ -27,10 +27,6 @@ public class Backup_Autonomous extends LinearOpMode {
 
         // Do stuff
         robot.resetHeading();
-        while (opModeIsActive()) {
-            telemetry.addData("Heading: ", robot.getHeading());
-            telemetry.update();
-            sleep(1000);
-        }
+
     }
 }

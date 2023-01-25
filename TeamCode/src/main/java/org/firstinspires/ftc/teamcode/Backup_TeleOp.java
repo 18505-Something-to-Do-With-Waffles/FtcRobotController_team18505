@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 
-@Disabled
+
 @TeleOp(name = "Backup_TeleOp")
 public class Backup_TeleOp extends LinearOpMode {
 
@@ -26,16 +26,15 @@ public class Backup_TeleOp extends LinearOpMode {
 
 
         // Do stuff
-        if (opModeIsActive()) {
 
-            while (opModeIsActive()) {
+        while (opModeIsActive()) {
+            controller1.update();
+            telemetry.update();
+            robot.teleDrive(controller1);
+            robot.teleGripper(controller1);
+            robot.teleLift(controller1);
 
-                telemetry.update();
-                robot.teleDrive(controller1);
-                //robot.teleGripper();
-                //robot.teleLift();
-
-            }
         }
+
     }
 }

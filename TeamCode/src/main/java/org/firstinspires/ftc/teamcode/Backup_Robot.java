@@ -25,9 +25,6 @@ public class Backup_Robot {
     // Instantiate Telemetry
     private Telemetry telemetry;
 
-    // Instantiate Controller
-    private Controller controller1;
-
     // Instantiate Lift System
     private int liftPos;
     final private int[] posEncoderVal = {0, 610, 1075, 1460};
@@ -92,12 +89,16 @@ public class Backup_Robot {
     }
 
     public void teleDrive(Controller controller) {
-        double speedMultiplier = 1;
-        /* [TBD] adjust speedMultiplier based on lift position */
-        /* [TBD] get x, y, r from controller */
-        double x = 0; // [TBD] get value from controller
-        double y = 0; // [TBD] get value from controller
-        double r = 0; // [TBD] get value from controller
+        double speedMultiplier;
+        if (this.getLiftPos() == 0) {
+            speedMultiplier = 0.45;
+        } else {
+            speedMultiplier = 0.3;
+        }
+
+        double x = controller.left_stick_x;
+        double y = controller.left_stick_y;
+        double r = controller.right_stick_x;
         this.driveSystem.drive(x, y, r, speedMultiplier);
     }
 
@@ -124,7 +125,7 @@ public class Backup_Robot {
         return this.liftPos;
     }
 
-    public void setLiftPos(int newLiftPos) {
+    private void setLiftPos(int newLiftPos) {
         /* Sets lift position to a new discrete position found
            in the posEncoderVal array. */
         int newEncoderVal = this.posEncoderVal[newLiftPos];
@@ -133,13 +134,58 @@ public class Backup_Robot {
     }
 
     public void teleSetLiftPos(Controller controller) {
-        // Wraps setLiftPos with some decision logic based on current lift position and controller
-        // [TBD] get command from controller
-        // [TBD] get current lift position
-        // [TBD] set new lift position using liftSystem.setLiftPos()
+        boolean up = controller.dpadUpOnce();
+        boolean down = controller.dpadDownOnce();
+        boolean leftright = controller.dpadLeftOnce() || controller.dpadRightOnce();
+        switch (this.getLiftPos()) {
+            case 0:
+                if (up){
+                    this.setLiftPos(1);
+                }
+            case 1:
+                if (up){
+                    this.setLiftPos(2);
+                }
+                else if (down){
+                    this.setLiftPos(0);
+                }
+            case 2:
+                if (up){
+                    this.setLiftPos(3);
+                }
+                else if (down){
+                    this.setLiftPos(0);
+                }
+            case 3:
+                if (down){
+                    this.setLiftPos(0);
+                }
+            case 4:
+                if (down){
+                    this.setLiftPos(0);
+                }
+                else if (up){
+                    int j = 0;
+                    while((posEncoderVal[j] < this.liftSystem.getLiftEncoderPos()[0]) && (j < 3)){
+                        ++j;
+                    }
+                    this.setLiftPos(j);
+                    this.liftPos = j;
+                }
+        }
     }
 
     public void teleAdjustLiftPos(Controller controller) {
+        boolean up = controller.dpadRight();
+        boolean down = controller.dpadLeft();
+        if (up) {
+            liftSystem.setLiftEncoderPos(liftSystem.getLiftEncoderPos()[0]+20);
+            this.liftPos = 4;
+        }
+        else if (down){
+            liftSystem.setLiftEncoderPos(liftSystem.getLiftEncoderPos()[0]-20);
+            this.liftPos = 4;
+        }
         // I think the desired behavior is if a certain button is held, the lift will move slowly up/down
         // [TBD] get command from controller
         // [TBD] increment/decrement lift position by some increment value using liftSystem.setLiftEncoderPos()
@@ -150,6 +196,7 @@ public class Backup_Robot {
         // Wrapper function which will call both teleop modes of lift operation
         this.teleSetLiftPos(controller);
         this.teleAdjustLiftPos(controller);
+        this.liftSystem.lowPowerMode();
     }
 
     public void teleGripper(Controller controller) {
@@ -160,7 +207,6 @@ public class Backup_Robot {
         if (controller.BOnce()) {
             gripSystem.setPosition(0.66, 0.37);
         }
-        telemetry.addData("left position", gripSystem.getPosition());
     }
 }
 
@@ -272,7 +318,7 @@ class DriveSystem {
     public void drive(double x, double y, double r, double speedMultiplier) {
         double movementy = y * speedMultiplier;
         double movementx = x * speedMultiplier;
-        double movementr = x * speedMultiplier * 1.5;
+        double movementr = r * speedMultiplier * 1.5;
         // [TBD] It seems like the inputs to setPower should be clipped (0 to 1)
         rearleft.setPower((movementy + movementx) - movementr);
         frontleft.setPower((movementy + (0 - movementx)) - movementr);
@@ -342,19 +388,20 @@ class LiftSystem {
     private DcMotor lift4front;
     final private int top = 1480;
     final private int bottom = 0;
+    final private double power = 0.5;
+    private int targetPosition;
 
     // Constructor
     public LiftSystem(HardwareMap hardwareMap) {
+        this.targetPosition = 0;
         this.lift5rear = hardwareMap.get(DcMotor.class, "lift5rear");
         this.lift4front = hardwareMap.get(DcMotor.class, "lift4front");
         lift4front.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lift5rear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         lift4front.setDirection(DcMotor.Direction.REVERSE);
-        lift4front.setDirection(DcMotor.Direction.FORWARD);
+        lift5rear.setDirection(DcMotor.Direction.FORWARD);
         lift4front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift5rear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift4front.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        lift5rear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
     public int[] getLiftEncoderPos() {
@@ -364,8 +411,21 @@ class LiftSystem {
 
     public void setLiftEncoderPos(int newLiftEncoderPos) {
         if (newLiftEncoderPos >= bottom && newLiftEncoderPos <= top) {
+            this.targetPosition = newLiftEncoderPos;
+            lift4front.setPower(power);
+            lift5rear.setPower(power);
             lift4front.setTargetPosition(newLiftEncoderPos);
             lift5rear.setTargetPosition(newLiftEncoderPos);
+            lift4front.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            lift5rear.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
+    }
+    public void lowPowerMode(){
+        if (this.getLiftEncoderPos()[0] < 10 && this.targetPosition == 0){
+            lift4front.setPower(0);
+            lift5rear.setPower(0);
+            lift4front.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lift5rear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
 }
