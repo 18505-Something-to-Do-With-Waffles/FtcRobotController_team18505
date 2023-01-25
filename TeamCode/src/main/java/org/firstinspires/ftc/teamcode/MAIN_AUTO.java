@@ -184,20 +184,20 @@ public class MAIN_AUTO extends LinearOpMode {
    */
   private void cameraInit() {
     vuforiaPOWERPLAY.initialize(
-        "", // vuforiaLicenseKey
-        hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
-        "", // webcamCalibrationFilename
-        false, // useExtendedTracking
-        true, // enableCameraMonitoring
-        VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES, // cameraMonitorFeedback
-        0, // dx
-        0, // dy
-        0, // dz
-        AxesOrder.XZY, // axesOrder
-        90, // firstAngle
-        90, // secondAngle
-        0, // thirdAngle
-        true); // useCompetitionFieldTargetLocations
+            "", // vuforiaLicenseKey
+            hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
+            "", // webcamCalibrationFilename
+            false, // useExtendedTracking
+            true, // enableCameraMonitoring
+            VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES, // cameraMonitorFeedback
+            0, // dx
+            0, // dy
+            0, // dz
+            AxesOrder.XZY, // axesOrder
+            90, // firstAngle
+            90, // secondAngle
+            0, // thirdAngle
+            true); // useCompetitionFieldTargetLocations
     // Set isModelTensorFlow2 to true if you used a TensorFlow
     // 2 tool, such as ftc-ml, to create the model.
     //

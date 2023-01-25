@@ -1,23 +1,34 @@
 package org.firstinspires.ftc.teamcode;
 
+// To get run time
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
 // For hardwareMap and telemetry
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.JavaUtil;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 // For Controller
 import com.qualcomm.robotcore.hardware.Gamepad;
 // For IMU
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 // For Motors
 import com.qualcomm.robotcore.hardware.DcMotor;
 // For Servos
 import com.qualcomm.robotcore.hardware.Servo;
 // For Vision
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
 
+import java.util.List;
 
 
 public class Backup_Robot {
@@ -77,7 +88,8 @@ public class Backup_Robot {
         this.distanceSensor = new DistanceSensor(hardwareMap);
 
         //Initialize Vision System
-        this.vision = new VisionSystem(hardwareMap);
+        String[] visionElements = {"blue", "green", "red"};
+        this.vision = new VisionSystem(hardwareMap, visionElements, 1.6, 1);
     }
 
     public double getHeading() {
@@ -102,7 +114,7 @@ public class Backup_Robot {
         this.driveSystem.drive(x, y, r, speedMultiplier);
     }
 
-    public void autoDriveDist(double targetDist) {
+    public void autoDriveDist(double targetDist, double speed) {
         // [TBD] Will involve dwEncoder
         // [TBD] Define auto drive behavior in terms of x, y, and r
         // [TBD] Call driveSystem.drive() using calculated x, y, r
@@ -136,7 +148,6 @@ public class Backup_Robot {
     public void teleSetLiftPos(Controller controller) {
         boolean up = controller.dpadUpOnce();
         boolean down = controller.dpadDownOnce();
-        boolean leftright = controller.dpadLeftOnce() || controller.dpadRightOnce();
         switch (this.getLiftPos()) {
             case 0:
                 if (up){
@@ -430,15 +441,68 @@ class LiftSystem {
     }
 }
 
-class VisionSystem {
+class VisionSystem extends LinearOpMode{
     // [TBD] TFOD, Vuforia, and Webcam declarations
     private VuforiaCurrentGame vuforiaPOWERPLAY;
     private Tfod tfod;
 
-    public VisionSystem(HardwareMap hardwareMap) {
-        // [TBD] TFOD, Vuforia, and Webcam initialization
-        vuforiaPOWERPLAY = new VuforiaCurrentGame();
-        tfod = new Tfod();
+    public VisionSystem(HardwareMap hardwareMap, String[] elements, double zoom, double aspectRatio) {
+        vuforiaPOWERPLAY.initialize(
+                "", // vuforiaLicenseKey
+                hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
+                "", // webcamCalibrationFilename
+                false, // useExtendedTracking
+                true, // enableCameraMonitoring
+                VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES, // cameraMonitorFeedback
+                0, // dx
+                0, // dy
+                0, // dz
+                AxesOrder.XZY, // axesOrder
+                90, // firstAngle
+                90, // secondAngle
+                0, // thirdAngle
+                true); // useCompetitionFieldTargetLocations
+        tfod.useModelFromFile("model_20221228_153128.tflite", JavaUtil.createListWith(elements), true, true, 320);
+        tfod.initialize(vuforiaPOWERPLAY, (float) 0.55, true, true);
+        tfod.setClippingMargins(0, 0, 0, 0);
+        tfod.activate();
+        // Enable following block to zoom in on target.
+        tfod.setZoom(zoom, aspectRatio);
+    }
+    private String getHighestConfLabel(){
+        String cameraReads = "";
+        List<Recognition> recognitions;
+        Recognition recognition;
+        double highestConfidence = 0;
+        resetRuntime();
+        cameraReads = "blue";
+        while (getRuntime()<2 && opModeIsActive()) {
+            recognitions = tfod.getRecognitions();
+            for (Recognition recognition_item : recognitions) {
+                recognition = recognition_item;
+                if (recognition_item.getLabel().equals("green") && recognition_item.getConfidence() > .85){
+                    if (recognition_item.getConfidence() > highestConfidence) {
+                        cameraReads = "green";
+                        highestConfidence = recognition.getConfidence();
+                    }
+                }
+                else if(recognition_item.getLabel().equals("red")) {
+                    if (recognition_item.getConfidence() > highestConfidence) {
+                        cameraReads = "red";
+                        highestConfidence = recognition.getConfidence();
+                    }
+                }
+                else if(recognition_item.getLabel().equals("blue")) {
+                    if (recognition_item.getConfidence() > highestConfidence) {
+                        cameraReads = "blue";
+                        highestConfidence = recognition.getConfidence();
+                    }
+                }
+            }
+        }
+        return cameraReads;
+    }
+    public void runOpMode(){
     }
     // [TBD] Methods here
     /*Could create readCone() here, or a more generalized version getHighestConfLabel()
