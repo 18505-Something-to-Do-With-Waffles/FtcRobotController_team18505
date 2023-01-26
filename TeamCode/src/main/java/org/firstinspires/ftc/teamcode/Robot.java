@@ -4,6 +4,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 // For hardwareMap and telemetry
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
@@ -29,9 +30,10 @@ import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
 
 import java.util.List;
+import java.lang.*;
 
 
-public class Backup_Robot {
+public class Robot {
 
     // Instantiate Telemetry
     private Telemetry telemetry;
@@ -59,11 +61,12 @@ public class Backup_Robot {
 
     // Instantiate VisionSystem
     private VisionSystem vision;
+    private String modelFile = "model_20221228_153128.tflite";
 
 
 
     // Initialize stuff
-    public Backup_Robot(HardwareMap hardwareMap, Telemetry telemetry) {
+    public Robot(HardwareMap hardwareMap, Telemetry telemetry) {
 
         //
         this.telemetry = telemetry;
@@ -89,7 +92,7 @@ public class Backup_Robot {
 
         //Initialize Vision System
         String[] visionElements = {"blue", "green", "red"};
-        this.vision = new VisionSystem(hardwareMap, visionElements, 1.6, 1);
+        this.vision = new VisionSystem(hardwareMap, visionElements, 1.6, 1, modelFile);
     }
 
     public double getHeading() {
@@ -115,15 +118,32 @@ public class Backup_Robot {
     }
 
     public void autoDriveDist(double targetDist, double speed) {
-        // [TBD] Will involve dwEncoder
-        // [TBD] Define auto drive behavior in terms of x, y, and r
-        // [TBD] Call driveSystem.drive() using calculated x, y, r
+        double driveEncoderDistance;
+        driveEncoderDistance = 45.2849 * targetDist;
+
+        driveSystem.resetEncoder();
+        while (Math.abs(driveEncoderDistance - driveSystem.getEncoder()) > 20){
+            if (targetDist < 0) {driveSystem.drive(0,1, 0, speed);}
+            else{driveSystem.drive(0,-1, 0, speed);}
+        }
+        driveSystem.drive(0,0, 0,0);
     }
 
-    public void autoTurnToHeading(double targetHeading) {
-        // [TBD] will involve imu, and some modulus math
-        // [TBD] Define auto drive behavior in terms of x, y, and r
-        // [TBD] Call driveSystem.drive() using calculated x, y, r
+    public void autoTurnToHeading(double targetHeading, double speed) {
+        targetHeading = -targetHeading;
+        if (targetHeading < -180){
+            targetHeading += 180;
+        }
+        else if(targetHeading > 180){
+            targetHeading -= 180;
+        }
+        imu.resetHeading();
+        while (Math.abs(imu.getHeading() - targetHeading) > 0.5){
+            // [TBD] Automatically slow while approachng target
+            if (targetHeading < 0) {driveSystem.drive(0,0, 1, speed);}
+            else{driveSystem.drive(0,0, -1, speed);}
+        }
+        driveSystem.drive(0,0, 0,0);
     }
 
     public void autoStrafeDist(double targetDist) {
@@ -137,7 +157,7 @@ public class Backup_Robot {
         return this.liftPos;
     }
 
-    private void setLiftPos(int newLiftPos) {
+    public void setLiftPos(int newLiftPos) {
         /* Sets lift position to a new discrete position found
            in the posEncoderVal array. */
         int newEncoderVal = this.posEncoderVal[newLiftPos];
@@ -213,11 +233,24 @@ public class Backup_Robot {
     public void teleGripper(Controller controller) {
         // Use controller variables to call this.gripperSystem methods
         if (controller.AOnce()) {
-            gripSystem.setPosition(0.02, 1);
+            gripper(true);
         }
         if (controller.BOnce()) {
+            gripper(false);
+        }
+    }
+    public void gripper(Boolean close){
+        if (close){
+            gripSystem.setPosition(0.02, 1);
+        }
+        else {
             gripSystem.setPosition(0.66, 0.37);
         }
+    }
+
+
+    public int readCone(){
+        return this.vision.readCone();
     }
 }
 
@@ -337,9 +370,19 @@ class DriveSystem {
         rearright.setPower(((0 - movementy) + movementx) - movementr);
     }
 
-    public void strafe() {
-
-    } // [TBD] Not sure if this is actually needed since this.drive can strafe
+    public void resetEncoder(){
+        frontleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontright.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rearleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rearright.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rearleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rearright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+    public double getEncoder(){
+        return rearright.getCurrentPosition();
+    }
 }
 
 class GripSystem {
@@ -441,12 +484,14 @@ class LiftSystem {
     }
 }
 
-class VisionSystem extends LinearOpMode{
+class VisionSystem{
     // [TBD] TFOD, Vuforia, and Webcam declarations
     private VuforiaCurrentGame vuforiaPOWERPLAY;
     private Tfod tfod;
 
-    public VisionSystem(HardwareMap hardwareMap, String[] elements, double zoom, double aspectRatio) {
+    public VisionSystem(HardwareMap hardwareMap, String[] elements, double zoom, double aspectRatio, String modelFile) {
+        vuforiaPOWERPLAY = new VuforiaCurrentGame();
+        tfod = new Tfod();
         vuforiaPOWERPLAY.initialize(
                 "", // vuforiaLicenseKey
                 hardwareMap.get(WebcamName.class, "Webcam 1"), // cameraName
@@ -462,47 +507,47 @@ class VisionSystem extends LinearOpMode{
                 90, // secondAngle
                 0, // thirdAngle
                 true); // useCompetitionFieldTargetLocations
-        tfod.useModelFromFile("model_20221228_153128.tflite", JavaUtil.createListWith(elements), true, true, 320);
+        tfod.useModelFromFile(modelFile, JavaUtil.createListWith(elements), true, true, 320);
         tfod.initialize(vuforiaPOWERPLAY, (float) 0.55, true, true);
         tfod.setClippingMargins(0, 0, 0, 0);
         tfod.activate();
         // Enable following block to zoom in on target.
         tfod.setZoom(zoom, aspectRatio);
     }
-    private String getHighestConfLabel(){
-        String cameraReads = "";
+    public int readCone(){
+        // [TBD] separate POWERPLAY details from vision system and put in robot
+        int cameraReads = 2;
         List<Recognition> recognitions;
         Recognition recognition;
         double highestConfidence = 0;
-        resetRuntime();
-        cameraReads = "blue";
-        while (getRuntime()<2 && opModeIsActive()) {
+        long time = System.currentTimeMillis();
+        final double secondsToSearch = 2;
+        while (System.currentTimeMillis() - time < secondsToSearch*1000) {
             recognitions = tfod.getRecognitions();
             for (Recognition recognition_item : recognitions) {
                 recognition = recognition_item;
                 if (recognition_item.getLabel().equals("green") && recognition_item.getConfidence() > .85){
                     if (recognition_item.getConfidence() > highestConfidence) {
-                        cameraReads = "green";
+                        cameraReads = 3;
                         highestConfidence = recognition.getConfidence();
                     }
                 }
                 else if(recognition_item.getLabel().equals("red")) {
                     if (recognition_item.getConfidence() > highestConfidence) {
-                        cameraReads = "red";
+                        cameraReads = 1;
                         highestConfidence = recognition.getConfidence();
                     }
                 }
                 else if(recognition_item.getLabel().equals("blue")) {
                     if (recognition_item.getConfidence() > highestConfidence) {
-                        cameraReads = "blue";
+                        cameraReads = 2;
                         highestConfidence = recognition.getConfidence();
                     }
                 }
             }
         }
         return cameraReads;
-    }
-    public void runOpMode(){
+
     }
     // [TBD] Methods here
     /*Could create readCone() here, or a more generalized version getHighestConfLabel()

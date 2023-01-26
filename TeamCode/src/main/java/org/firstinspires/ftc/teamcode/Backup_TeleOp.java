@@ -12,12 +12,12 @@ public class Backup_TeleOp extends LinearOpMode {
     public void runOpMode() {
 
         // Instantiate stuff
-        Backup_Robot robot;
+        Robot robot;
         Controller controller1;
 
 
         // Initialize stuff
-        robot = new Backup_Robot(hardwareMap, telemetry);
+        robot = new Robot(hardwareMap, telemetry);
         controller1 = new Controller(gamepad1);
 
 
