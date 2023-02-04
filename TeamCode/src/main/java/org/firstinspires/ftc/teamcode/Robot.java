@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-// To get run time
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-
 // For hardwareMap and telemetry
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -74,6 +71,9 @@ public class Robot {
         // Initialize IMU
         this.imu = new IMUSystem(hardwareMap);
 
+        // Reset IMU heading - localized to playing field
+        imu.resetHeading();
+
         // Initialize DriveSystem
         this.driveSystem = new DriveSystem(hardwareMap);
 
@@ -111,10 +111,10 @@ public class Robot {
             speedMultiplier = 0.3;
         }
 
-        double x = controller.left_stick_x;
-        double y = controller.left_stick_y;
-        double r = controller.right_stick_x;
-        this.driveSystem.drive(x, y, r, speedMultiplier);
+        double x = controller.left_stick_x * speedMultiplier;
+        double y = controller.left_stick_y * speedMultiplier;
+        double r = controller.right_stick_x * speedMultiplier;
+        this.driveSystem.drive(x, y, r);
     }
 
     public void autoDriveDist(double targetDist, double speed) {
@@ -123,27 +123,30 @@ public class Robot {
 
         driveSystem.resetEncoder();
         while (Math.abs(driveEncoderDistance - driveSystem.getEncoder()) > 20){
-            if (targetDist < 0) {driveSystem.drive(0,1, 0, speed);}
-            else{driveSystem.drive(0,-1, 0, speed);}
+            if (targetDist < 0) {driveSystem.drive(0,speed, 0);}
+            else{driveSystem.drive(0,-speed, 0);}
         }
-        driveSystem.drive(0,0, 0,0);
+        driveSystem.drive(0,0, 0);
     }
 
     public void autoTurnToHeading(double targetHeading, double speed) {
         targetHeading = -targetHeading;
-        if (targetHeading < -180){
-            targetHeading += 180;
+        double turnspeed;
+//        double turnAngle = (targetHeading - this.getHeading() + 180) % 360 - 180;
+        double turnAngle = (this.getHeading() -targetHeading + 180) % 360 - 180;
+
+        while (Math.abs(turnAngle)>1){
+//            turnAngle = targetHeading - this.getHeading();
+            turnAngle = this.getHeading() - targetHeading;
+            turnAngle = (turnAngle + 180) % 360 - 180;
+            turnspeed = speed*Math.max(Math.min(Math.abs(turnAngle)/20,1), 0.1);
+            if (turnAngle < 0){
+                turnspeed = -turnspeed;
+            }
+
+            driveSystem.drive(0, 0, turnspeed);
         }
-        else if(targetHeading > 180){
-            targetHeading -= 180;
-        }
-        imu.resetHeading();
-        while (Math.abs(imu.getHeading() - targetHeading) > 0.5){
-            // [TBD] Automatically slow while approachng target
-            if (targetHeading < 0) {driveSystem.drive(0,0, 1, speed);}
-            else{driveSystem.drive(0,0, -1, speed);}
-        }
-        driveSystem.drive(0,0, 0,0);
+        driveSystem.drive(0,0, 0);
     }
 
     public void autoStrafeDist(double targetDist) {
@@ -239,6 +242,7 @@ public class Robot {
             gripper(false);
         }
     }
+
     public void gripper(Boolean close){
         if (close){
             gripSystem.setPosition(0.02, 1);
@@ -247,7 +251,6 @@ public class Robot {
             gripSystem.setPosition(0.66, 0.37);
         }
     }
-
 
     public int readCone(){
         return this.vision.readCone();
@@ -359,10 +362,10 @@ class DriveSystem {
         this.rearright = hardwareMap.get(DcMotor.class, "rearright");
     }
 
-    public void drive(double x, double y, double r, double speedMultiplier) {
-        double movementy = y * speedMultiplier;
-        double movementx = x * speedMultiplier;
-        double movementr = r * speedMultiplier * 1.5;
+    public void drive(double x, double y, double r) {
+        double movementy = y;
+        double movementx = x;
+        double movementr = r * 1.5;
         // [TBD] It seems like the inputs to setPower should be clipped (0 to 1)
         rearleft.setPower((movementy + movementx) - movementr);
         frontleft.setPower((movementy + (0 - movementx)) - movementr);
