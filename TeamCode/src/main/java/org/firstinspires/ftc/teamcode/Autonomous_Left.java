@@ -35,7 +35,17 @@ public class Autonomous_Left extends LinearOpMode {
         telemetry.update();
         telemetry.addData("Cone", robot.readCone());
         telemetry.update();
-        robot.autoTurnToHeading(90,0.3);
-        sleep(2000);
+
+        robot.gripper(false);
+        robot.gripper(true);
+        robot.autoDriveDist(3,0.3);
+        robot.autoTurnToHeading(45, 0.3, 0.5);
+        robot.setLiftPos(1);
+        robot.autoDriveDist(7.2, 0.3);
+        robot.gripper(false);
+        robot.setLiftPos(0);
+        robot.autoDriveDist(-7.2, 0.3);
+        robot.autoTurnToHeading(-45, 0.3, 0.5);
+        robot.autoDriveDist(0.3, -3);
     }
 }

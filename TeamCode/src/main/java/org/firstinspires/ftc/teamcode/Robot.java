@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 // For hardwareMap and telemetry
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
@@ -26,9 +25,12 @@ import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.Tfod;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
 
+// For Distance Sensor
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+
 import java.util.List;
 import java.lang.*;
-
 
 public class Robot {
 
@@ -54,7 +56,7 @@ public class Robot {
     private DeadWheelEncoderSystem dwEncoder;
 
     // Instantiate DistanceSensor
-    private DistanceSensor distanceSensor;
+//    private DistanceSensorSystem distanceSensor;
 
     // Instantiate VisionSystem
     private VisionSystem vision;
@@ -88,7 +90,7 @@ public class Robot {
         this.dwEncoder = new DeadWheelEncoderSystem(hardwareMap);
 
         // Initialize Distance Sensor
-        this.distanceSensor = new DistanceSensor(hardwareMap);
+//        this.distanceSensor = new DistanceSensorSystem(hardwareMap);
 
         //Initialize Vision System
         String[] visionElements = {"blue", "green", "red"};
@@ -122,24 +124,26 @@ public class Robot {
         driveEncoderDistance = 45.2849 * targetDist;
 
         driveSystem.resetEncoder();
-        while (Math.abs(driveEncoderDistance - driveSystem.getEncoder()) > 20){
+        while (Math.abs(driveEncoderDistance - driveSystem.getEncoder()) > 5){
             if (targetDist < 0) {driveSystem.drive(0,speed, 0);}
             else{driveSystem.drive(0,-speed, 0);}
         }
         driveSystem.drive(0,0, 0);
     }
 
-    public void autoTurnToHeading(double targetHeading, double speed) {
+    public void autoTurnToHeading(double targetHeading, double speed, double precision) {
+        if (targetHeading < 0){
+            targetHeading += 360;
+        }
         targetHeading = -targetHeading;
         double turnspeed;
 //        double turnAngle = (targetHeading - this.getHeading() + 180) % 360 - 180;
         double turnAngle = (this.getHeading() -targetHeading + 180) % 360 - 180;
-
-        while (Math.abs(turnAngle)>1){
+        while (Math.abs(turnAngle)>precision){
 //            turnAngle = targetHeading - this.getHeading();
             turnAngle = this.getHeading() - targetHeading;
             turnAngle = (turnAngle + 180) % 360 - 180;
-            turnspeed = speed*Math.max(Math.min(Math.abs(turnAngle)/20,1), 0.1);
+            turnspeed = speed*Math.max(Math.min(Math.abs(turnAngle)/20,1), 0.2);
             if (turnAngle < 0){
                 turnspeed = -turnspeed;
             }
@@ -255,6 +259,30 @@ public class Robot {
     public int readCone(){
         return this.vision.readCone();
     }
+
+//    public void searchForPole(){
+//        while (this.getDistance() > 12){
+//            driveSystem.drive(0,0,0.1);
+//            telemetry.addData("Bearing",this.getHeading());
+//            telemetry.addData("Distance",this.getDistance());
+//            telemetry.update();
+//        }
+//        double firstBearing = this.getHeading();
+//        while (this.getDistance() <= 12){
+//            driveSystem.drive(0,0,0.1);
+//            telemetry.addData("Bearing",this.getHeading());
+//            telemetry.addData("Distance",this.getDistance());
+//            telemetry.update();
+//        }
+//        double secondBearing = this.getHeading();
+//        this.autoTurnToHeading((firstBearing+secondBearing)/2, 0.15, 0.25);
+//        telemetry.addData("Bearing",this.getHeading());
+//        telemetry.addData("Distance",this.getDistance());
+//        telemetry.update();
+//    }
+//    public double getDistance(){
+//        return distanceSensor.getDistanceInches();
+//    }
 }
 
 class Controller {
@@ -338,14 +366,18 @@ class DeadWheelEncoderSystem {
     // [TBD] Methods here
 } // [TBD]
 
-class DistanceSensor {
-    // [TBD] Instantiate distance sensor
-
-    public DistanceSensor(HardwareMap hardwareMap) {
-        // [TBD] Initialize distance sensor
-    }
-    // [TBD] Methods here
-} // [TBD]
+//class DistanceSensorSystem {
+//    private DistanceSensor distanceSensor;
+//
+//    public DistanceSensorSystem(HardwareMap hardwareMap) {
+//        distanceSensor = hardwareMap.get(DistanceSensor.class, "distanceSensor");
+//    }
+//
+//    public double getDistanceInches(){
+//        return distanceSensor.getDistance(DistanceUnit.INCH);
+//    }
+//    // [TBD] Methods here
+//} // [TBD]
 
 class DriveSystem {
     private DcMotor rearleft;
@@ -488,7 +520,6 @@ class LiftSystem {
 }
 
 class VisionSystem{
-    // [TBD] TFOD, Vuforia, and Webcam declarations
     private VuforiaCurrentGame vuforiaPOWERPLAY;
     private Tfod tfod;
 
@@ -552,11 +583,5 @@ class VisionSystem{
         return cameraReads;
 
     }
-    // [TBD] Methods here
-    /*Could create readCone() here, or a more generalized version getHighestConfLabel()
-    which could take an array of confidence thresholds as optional parameter.  That would let
-    you reuse this class/method in future years without changing it.*/
 
 } // [TBD]
-
-
