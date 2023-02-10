@@ -31,31 +31,44 @@ public class Autonomous_Left extends LinearOpMode {
 
         // Do stuff
         robot.resetHeading();
+        int cone = robot.readCone();
         telemetry.addLine("Reading Cone...");
         telemetry.update();
-        telemetry.addData("Cone", robot.readCone());
+        telemetry.addData("Cone", cone);
         telemetry.update();
 
-        robot.gripper(false);
-        robot.coneStackSetLiftPos(5);
-        sleep(500);
-        robot.gripper(true);
-        sleep(500);
-        robot.autoSetLiftPosition(2);
 
-//        robot.gripper(false);
-//        robot.gripper(true);
-//        robot.autoDriveDist(3,0.3);
-//        robot.autoTurnToHeading(-43, 0.3, 0.5);
-//        robot.autoSetLiftPosition(1);
-//        robot.autoDriveDist(3, 0.3);
-//        sleep(500);
-//        robot.gripper(false);
-//        sleep(1000);
-//        robot.autoSetLiftPosition(0);
-//        robot.autoDriveDist(-3, 0.3);
-//        robot.autoTurnToHeading(0, 0.3, 0.5);
-//        robot.autoDriveDist(-3, 0.3);
+
+
+
+        robot.gripper(false);
+        robot.gripper(true);
+        robot.autoDriveDist(3,0.3);
+        robot.autoTurnToHeading(-43, 0.3, 0.5);
+        robot.autoSetLiftPosition(1);
+        robot.autoDriveDist(3, 0.3);
+        sleep(200);
+        robot.gripper(false);
+        sleep(400);
+        robot.autoSetLiftPosition(0);
+        robot.autoDriveDist(-3, 0.3);
+        robot.autoTurnToHeading(0, 0.3, 0.5);
+        robot.autoDriveDist(-3, 0.3);
+
+        robot.autoDriveDist(54, 0.2);
+        robot.autoDriveDist(-4, 0.2);
+
+        if (cone == 1) {
+            robot.autoTurnToHeading(-90, 0.2, 0.5);
+            robot.autoDriveDist(24, 0.2);
+        }
+        if (cone == 3) {
+            robot.autoTurnToHeading(90, 0.2, 0.5);
+            robot.autoDriveDist(24, 0.2);
+        }
+
+
+
 
 
     }

@@ -52,12 +52,13 @@ public class Robot {
 
     // Instantiate IMU System
     private IMUSystem imu;
+    private double currentHeading;
 
     // Instantiate DeadWheelEncoder System
     private DeadWheelEncoderSystem dwEncoder;
 
-    // Instantiate DistanceSensor
-//    private DistanceSensorSystem distanceSensor;
+    //Instantiate DistanceSensor
+    private DistanceSensorSystem distanceSensor;
 
     // Instantiate VisionSystem
     private VisionSystem vision;
@@ -91,7 +92,7 @@ public class Robot {
         this.dwEncoder = new DeadWheelEncoderSystem(hardwareMap);
 
         // Initialize Distance Sensor
-//        this.distanceSensor = new DistanceSensorSystem(hardwareMap);
+        this.distanceSensor = new DistanceSensorSystem(hardwareMap);
 
         //Initialize Vision System
         String[] visionElements = {"blue", "green", "red"};
@@ -123,9 +124,8 @@ public class Robot {
     public void autoDriveDist(double targetDist, double speed) {
         double driveEncoderDistance;
         driveEncoderDistance = 45.2849 * targetDist;
-
         driveSystem.resetEncoder();
-        while (Math.abs(driveEncoderDistance - driveSystem.getEncoder()) > 5){
+        while (Math.abs(driveEncoderDistance - driveSystem.getEncoder()) > 10){
             if (targetDist < 0) {driveSystem.drive(0,speed, 0);}
             else{driveSystem.drive(0,-speed, 0);}
         }
@@ -137,6 +137,7 @@ public class Robot {
             targetHeading += 360;
         }
         targetHeading = -targetHeading;
+        this.currentHeading = targetHeading;
         double turnspeed;
 //        double turnAngle = (targetHeading - this.getHeading() + 180) % 360 - 180;
         double turnAngle = (this.getHeading() -targetHeading + 180) % 360 - 180;
@@ -276,6 +277,14 @@ public class Robot {
 
     public int readCone(){
         return this.vision.readCone();
+    }
+
+    public void driveToDistanceReading(double speed, double distance){
+
+        while (distanceSensor.getDistanceInches() > distance){
+            driveSystem.drive(0, -speed, 0);
+        }
+        driveSystem.drive(0, 0, 0);
     }
 
 
