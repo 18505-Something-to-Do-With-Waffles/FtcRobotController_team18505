@@ -40,6 +40,7 @@ public class Robot {
     // Instantiate Lift System
     private int liftPos;
     final private int[] posEncoderVal = {0, 610, 1075, 1460};
+    final private  int[] coneStackLiftEncoderValue = {0, 45, 90, 135, 180};
     private LiftSystem liftSystem;
 
     // Instantiate Drive System
@@ -164,12 +165,29 @@ public class Robot {
         return this.liftPos;
     }
 
+    public void coneStackSetLiftPos(int newLiftPos) {
+        newLiftPos -= 1;
+        int newEncoderVal = this.coneStackLiftEncoderValue[newLiftPos];
+        this.liftSystem.setLiftEncoderPos(newEncoderVal);
+        this.liftPos = 4;
+        while (Math.abs(liftSystem.getLiftEncoderPos()[1] - coneStackLiftEncoderValue[newLiftPos]) > 5){
+            //do nothing
+        }
+    }
+
     public void setLiftPos(int newLiftPos) {
         /* Sets lift position to a new discrete position found
            in the posEncoderVal array. */
         int newEncoderVal = this.posEncoderVal[newLiftPos];
         this.liftSystem.setLiftEncoderPos(newEncoderVal);
         this.liftPos = newLiftPos;
+    }
+
+    public void autoSetLiftPosition(int newLiftPos) {
+        this.setLiftPos(newLiftPos);
+        while (Math.abs(liftSystem.getLiftEncoderPos()[1] - posEncoderVal[newLiftPos]) > 10){
+            //do nothing
+        }
     }
 
     public void teleSetLiftPos(Controller controller) {
@@ -260,29 +278,7 @@ public class Robot {
         return this.vision.readCone();
     }
 
-//    public void searchForPole(){
-//        while (this.getDistance() > 12){
-//            driveSystem.drive(0,0,0.1);
-//            telemetry.addData("Bearing",this.getHeading());
-//            telemetry.addData("Distance",this.getDistance());
-//            telemetry.update();
-//        }
-//        double firstBearing = this.getHeading();
-//        while (this.getDistance() <= 12){
-//            driveSystem.drive(0,0,0.1);
-//            telemetry.addData("Bearing",this.getHeading());
-//            telemetry.addData("Distance",this.getDistance());
-//            telemetry.update();
-//        }
-//        double secondBearing = this.getHeading();
-//        this.autoTurnToHeading((firstBearing+secondBearing)/2, 0.15, 0.25);
-//        telemetry.addData("Bearing",this.getHeading());
-//        telemetry.addData("Distance",this.getDistance());
-//        telemetry.update();
-//    }
-//    public double getDistance(){
-//        return distanceSensor.getDistanceInches();
-//    }
+
 }
 
 class Controller {
@@ -366,18 +362,18 @@ class DeadWheelEncoderSystem {
     // [TBD] Methods here
 } // [TBD]
 
-//class DistanceSensorSystem {
-//    private DistanceSensor distanceSensor;
-//
-//    public DistanceSensorSystem(HardwareMap hardwareMap) {
-//        distanceSensor = hardwareMap.get(DistanceSensor.class, "distanceSensor");
-//    }
-//
-//    public double getDistanceInches(){
-//        return distanceSensor.getDistance(DistanceUnit.INCH);
-//    }
-//    // [TBD] Methods here
-//} // [TBD]
+class DistanceSensorSystem {
+    private DistanceSensor distanceSensor;
+
+    public DistanceSensorSystem(HardwareMap hardwareMap) {
+        distanceSensor = hardwareMap.get(DistanceSensor.class, "distanceSensor");
+    }
+
+    public double getDistanceInches(){
+        return distanceSensor.getDistance(DistanceUnit.INCH);
+    }
+    // [TBD] Methods here
+} // [TBD]
 
 class DriveSystem {
     private DcMotor rearleft;
