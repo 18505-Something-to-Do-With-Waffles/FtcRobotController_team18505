@@ -55,7 +55,7 @@ public class Robot {
     private double currentHeading;
 
     // Instantiate DeadWheelEncoder System
-    private DeadWheelEncoderSystem dwEncoder;
+//    private DeadWheelEncoderSystem dwEncoder;
 
     //Instantiate DistanceSensor
     private DistanceSensorSystem distanceSensor;
@@ -89,7 +89,7 @@ public class Robot {
         this.gripSystem = new GripSystem(hardwareMap);
 
         // Initialize DeadWheelEncoder System
-        this.dwEncoder = new DeadWheelEncoderSystem(hardwareMap);
+//        this.dwEncoder = new DeadWheelEncoderSystem(hardwareMap);
 
         // Initialize Distance Sensor
         this.distanceSensor = new DistanceSensorSystem(hardwareMap);
@@ -287,6 +287,26 @@ public class Robot {
         driveSystem.drive(0, 0, 0);
     }
 
+//    public void driveToNewPos(double targetDist, double speed){
+//        this.dwEncoder.resetOdometry();
+//
+//        double driveEncoderDistance;
+//        driveEncoderDistance = 4023.1459 * targetDist;
+//        driveSystem.resetEncoder();
+//        double distanceGap = Math.abs(driveEncoderDistance - Math.abs(this.dwEncoder.getOdoDistance()));
+//        while (distanceGap > 10){
+//            distanceGap = Math.abs(driveEncoderDistance - Math.abs(this.dwEncoder.getOdoDistance()));
+//            double speedRatio = Math.max(distanceGap/driveEncoderDistance, 0.15);
+//            if (driveEncoderDistance - Math.abs(this.dwEncoder.getOdoDistance()) > 10) {
+//                driveSystem.drive(0,-speed*speedRatio, 0);
+//            }
+//            else if (driveEncoderDistance - Math.abs(this.dwEncoder.getOdoDistance()) > 10){
+//                driveSystem.drive(0, speed*speedRatio, 0);
+//            }
+//        }
+//        driveSystem.drive(0,0, 0);
+//    }
+
 
 }
 
@@ -361,15 +381,25 @@ class Controller {
 
 }
 
-class DeadWheelEncoderSystem {
-    // [TBD] Declare wheel circumference constants for distance calcs
-    // [TBD] Instantiate all encoders
-
-    public DeadWheelEncoderSystem(HardwareMap hardwareMap) {
-        // [TBD] Initialize all encoders, class variables
-    }
-    // [TBD] Methods here
-} // [TBD]
+//class DeadWheelEncoderSystem {
+//    private DcMotor leftPod;
+//    private DcMotor rightPod;
+//
+//    public DeadWheelEncoderSystem(HardwareMap hardwareMap) {
+//        this.leftPod = hardwareMap.get(DcMotor.class, "leftPod");
+//        this.rightPod = hardwareMap.get(DcMotor.class, "rightPod");
+//    }
+//
+//    public void resetOdometry(){
+//        this.leftPod.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        this.rightPod.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//    }
+//
+//    public double getOdoDistance(){
+//        return this.leftPod.getCurrentPosition();
+//    }
+//    // [TBD] Methods here
+//} // [TBD]
 
 class DistanceSensorSystem {
     private DistanceSensor distanceSensor;
@@ -385,18 +415,18 @@ class DistanceSensorSystem {
 } // [TBD]
 
 class DriveSystem {
-    private DcMotor rearleft;
-    private DcMotor frontleft;
-    private DcMotor frontright;
-    private DcMotor rearright;
+    private DcMotor leftRear;
+    private DcMotor leftFront;
+    private DcMotor rightFront;
+    private DcMotor rightRear;
 
 
     // Constructor
     public DriveSystem(HardwareMap hardwareMap) {
-        this.rearleft = hardwareMap.get(DcMotor.class, "rearleft");
-        this.frontleft = hardwareMap.get(DcMotor.class, "frontleft");
-        this.frontright = hardwareMap.get(DcMotor.class, "frontright");
-        this.rearright = hardwareMap.get(DcMotor.class, "rearright");
+        this.leftRear = hardwareMap.get(DcMotor.class, "leftRear");
+        this.leftFront = hardwareMap.get(DcMotor.class, "leftFront");
+        this.rightFront = hardwareMap.get(DcMotor.class, "rightFront");
+        this.rightRear = hardwareMap.get(DcMotor.class, "rightRear");
     }
 
     public void drive(double x, double y, double r) {
@@ -404,24 +434,24 @@ class DriveSystem {
         double movementx = x;
         double movementr = r * 1.5;
         // [TBD] It seems like the inputs to setPower should be clipped (0 to 1)
-        rearleft.setPower((movementy + movementx) - movementr);
-        frontleft.setPower((movementy + (0 - movementx)) - movementr);
-        frontright.setPower(((0 - movementy) + (0 - movementx)) - movementr);
-        rearright.setPower(((0 - movementy) + movementx) - movementr);
+        leftRear.setPower((movementy + movementx) - movementr);
+        leftFront.setPower((movementy + (0 - movementx)) - movementr);
+        rightFront.setPower(((0 - movementy) + (0 - movementx)) - movementr);
+        rightRear.setPower(((0 - movementy) + movementx) - movementr);
     }
 
     public void resetEncoder(){
-        frontleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontright.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rearleft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rearright.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frontleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frontright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rearleft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rearright.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightRear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
     public double getEncoder(){
-        return rearright.getCurrentPosition();
+        return rightRear.getCurrentPosition();
     }
 }
 
