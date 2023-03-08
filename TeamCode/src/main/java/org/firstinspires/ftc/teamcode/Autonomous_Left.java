@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 //import org.firstinspires.ftc.teamcode.Backup_Robot;
 
 
-
+@Disabled
 @Autonomous(name = "Autonomous_Left", preselectTeleOp = "Main2022")
 public class Autonomous_Left extends LinearOpMode {
     public void runOpMode() {

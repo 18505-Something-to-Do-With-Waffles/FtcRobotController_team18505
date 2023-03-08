@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.Old;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import android.util.Log;
 
+@Disabled
 @TeleOp(name = "simpleTest")
 public class Backup_simpleTest extends LinearOpMode {
 

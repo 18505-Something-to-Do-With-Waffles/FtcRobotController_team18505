@@ -30,16 +30,16 @@ public class RightAutonomous extends LinearOpMode {
                 .lineToLinearHeading(new Pose2d(5.289, 6.04, 0.872665))
                 .build();
         Trajectory firstPole = drive.trajectoryBuilder(lineUpFirstPole.end())
-                .lineToLinearHeading(new Pose2d(8.0, 9.0, 0.88))
+                .lineToLinearHeading(new Pose2d(8.0, 9.0, 0.91))
                 .build();
         Trajectory lineUpBeforeStraight = drive.trajectoryBuilder(firstPole.end())
                 .lineToLinearHeading(new Pose2d(3, 5, 0))
                 .build();
         Trajectory longStraight = drive.trajectoryBuilder(lineUpBeforeStraight.end())
-                .lineToLinearHeading(new Pose2d(49.66, 3.1, 0))
+                .lineToLinearHeading(new Pose2d(46, 3.1, 0))
                 .build();
         Trajectory coneStack1 = drive.trajectoryBuilder(longStraight.end())
-                .lineToLinearHeading(new Pose2d(49.44, -17.16, 4.720))
+                .lineToLinearHeading(new Pose2d(53, -16, 4.720))
                 .build();
         Trajectory backupToPole = drive.trajectoryBuilder(coneStack1.end())
                 .lineToLinearHeading(new Pose2d(49.0, 1.88, 4.716))
@@ -51,22 +51,25 @@ public class RightAutonomous extends LinearOpMode {
                 .lineToLinearHeading(new Pose2d(55, 4, 4.139))
                 .build();
         Trajectory coneStack2 = drive.trajectoryBuilder(backupAfterPole.end())
-                .lineToLinearHeading(new Pose2d(49.44, -16, 4.720))
+                .lineToLinearHeading(new Pose2d(53, -16, 4.720))
+                .build();
+        Trajectory avoidLipBackup = drive.trajectoryBuilder(coneStack2.end())
+                .back(1.5)
                 .build();
         Trajectory park1 = drive.trajectoryBuilder(coneStack2.end())
                 .lineToLinearHeading(new Pose2d(49.6, 28.2, 4.716))
                 .build();
         Trajectory park2 = drive.trajectoryBuilder(coneStack2.end())
-                .lineToLinearHeading(new Pose2d(44.0, 1.8, 4.72))
+                .lineToLinearHeading(new Pose2d(50, 4, 4.72))
                 .build();
 //        Trajectory park3 = drive.trajectoryBuilder(coneStack2.end())
 //                .lineToLinearHeading(new Pose2d(49.44, -17.16, 4.720))
 //                .build();
-        Trajectory turnToPole = drive.trajectoryBuilder(coneStack2.end())
+        Trajectory turnToPole = drive.trajectoryBuilder(avoidLipBackup.end())
                 .lineToLinearHeading(new Pose2d(46.82, -14, 2.47))
                 .build();
         Trajectory backupAfterPull = drive.trajectoryBuilder(turnToPole.end())
-                .back(1)
+                .back(3)
                 .build();
 
         // Wait for start
@@ -98,6 +101,8 @@ public class RightAutonomous extends LinearOpMode {
         drive.followTrajectory(coneStack1);
         robot.gripper(true);
         sleep(150);
+        robot.coneStackSetLiftPos(6);
+        drive.followTrajectory(avoidLipBackup);
         robot.setLiftPos(1);
         sleep(300);
         drive.followTrajectory(turnToPole);
@@ -107,21 +112,14 @@ public class RightAutonomous extends LinearOpMode {
         robot.coneStackSetLiftPos(4);
         robot.gripper(true);
         sleep(150);
+        robot.coneStackSetLiftPos(6);
+        drive.followTrajectory(avoidLipBackup);
         robot.setLiftPos(1);
         sleep(300);
         drive.followTrajectory(turnToPole);
         robot.gripper(false);
         sleep(300);
         drive.followTrajectory(backupAfterPull);
-        drive.followTrajectory(coneStack2);
-        robot.coneStackSetLiftPos(3);
-        robot.gripper(true);
-        sleep(150);
-        robot.setLiftPos(1);
-        sleep(300);
-        drive.followTrajectory(turnToPole);
-        robot.gripper(false);
-        sleep(300);
         drive.followTrajectory(coneStack2);
         robot.autoSetLiftPosition(0);
 

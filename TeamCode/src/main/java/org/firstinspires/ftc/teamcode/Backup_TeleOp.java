@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 
-
+@Disabled
 @TeleOp(name = "Backup_TeleOp")
 public class Backup_TeleOp extends LinearOpMode {
 

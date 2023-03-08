@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Old;
+package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -10,10 +10,10 @@ public class Main2022 extends LinearOpMode {
 
     private DcMotor lift5rear;
     private DcMotor lift4front;
-    private DcMotor rearleft;
-    private DcMotor frontleft;
-    private DcMotor frontright;
-    private DcMotor rearright;
+    private DcMotor leftRear;
+    private DcMotor leftFront;
+    private DcMotor rightFront;
+    private DcMotor rightRear;
     private Servo left;
     private Servo right;
     
@@ -25,13 +25,24 @@ public class Main2022 extends LinearOpMode {
      * Describe this function...
      */
     private void lift() {
+
+        if (gamepad1.right_bumper){
+            lift5rear.setPower(0);
+            lift4front.setPower(0);
+            lift4front.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            lift5rear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            lift4front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            lift5rear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            lift4front.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            lift5rear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
         
         
         if (gamepad1.dpad_right && lift5rear.getTargetPosition() < 1480) {
             liftPos = 4;
             lift4front.setTargetPosition(lift4front.getTargetPosition() - 20);
             lift5rear.setTargetPosition(lift5rear.getTargetPosition() + 20);
-        } else if (gamepad1.dpad_left && lift5rear.getTargetPosition() > 5) {
+        } else if (gamepad1.dpad_left) {
             liftPos = 4;
             lift4front.setTargetPosition(lift4front.getTargetPosition() + 20);
             lift5rear.setTargetPosition(lift5rear.getTargetPosition() - 20);
@@ -102,10 +113,10 @@ public class Main2022 extends LinearOpMode {
     public void runOpMode() {
         lift5rear = hardwareMap.get(DcMotor.class, "lift5rear");
         lift4front = hardwareMap.get(DcMotor.class, "lift4front");
-        rearleft = hardwareMap.get(DcMotor.class, "rearleft");
-        frontleft = hardwareMap.get(DcMotor.class, "frontleft");
-        frontright = hardwareMap.get(DcMotor.class, "frontright");
-        rearright = hardwareMap.get(DcMotor.class, "rearright");
+        leftRear = hardwareMap.get(DcMotor.class, "leftRear");
+        leftFront = hardwareMap.get(DcMotor.class, "leftFront");
+        rightFront = hardwareMap.get(DcMotor.class, "rightFront");
+        rightRear = hardwareMap.get(DcMotor.class, "rightRear");
         left = hardwareMap.get(Servo.class, "left");
         right = hardwareMap.get(Servo.class, "right");
 
@@ -142,15 +153,15 @@ public class Main2022 extends LinearOpMode {
         if (!(liftPos == 0)) {
             speedMultiplier = 0.3;
         } else {
-            speedMultiplier = 0.45;
+            speedMultiplier = 0.7;
         }
         movementy = gamepad1.left_stick_y * speedMultiplier;
         movementx = gamepad1.left_stick_x * speedMultiplier;
         movementr = gamepad1.right_stick_x * speedMultiplier * 1.5;
-        rearleft.setPower((movementy + movementx) - movementr);
-        frontleft.setPower((movementy + (0 - movementx)) - movementr);
-        frontright.setPower(((0 - movementy) + (0 - movementx)) - movementr);
-        rearright.setPower(((0 - movementy) + movementx) - movementr);
+        leftRear.setPower((movementy + movementx) - movementr);
+        leftFront.setPower((movementy + (0 - movementx)) - movementr);
+        rightFront.setPower(((0 - movementy) + (0 - movementx)) - movementr);
+        rightRear.setPower(((0 - movementy) + movementx) - movementr);
     }
 
     /**

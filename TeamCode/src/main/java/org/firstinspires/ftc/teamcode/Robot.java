@@ -40,7 +40,7 @@ public class Robot {
     // Instantiate Lift System
     private int liftPos;
     final private int[] posEncoderVal = {0, 610, 1075, 1460};
-    final private  int[] coneStackLiftEncoderValue = {0, 45, 90, 135, 180};
+    final private  int[] coneStackLiftEncoderValue = {0, 45, 90, 135, 180, 360};
     private LiftSystem liftSystem;
 
     // Instantiate Drive System
@@ -254,6 +254,7 @@ public class Robot {
         this.teleSetLiftPos(controller);
         this.teleAdjustLiftPos(controller);
         this.liftSystem.lowPowerMode();
+        this.reZeroLift(controller);
     }
 
     public void teleGripper(Controller controller) {
@@ -285,6 +286,12 @@ public class Robot {
             driveSystem.drive(0, -speed, 0);
         }
         driveSystem.drive(0, 0, 0);
+    }
+
+    public void reZeroLift(Controller controller){
+        if (controller.rightBumperOnce()) {
+            liftSystem.zeroLift();
+        }
     }
 
 //    public void driveToNewPos(double targetDist, double speed){
@@ -511,7 +518,6 @@ class LiftSystem {
     private DcMotor lift5rear;
     private DcMotor lift4front;
     final private int top = 1480;
-    final private int bottom = 0;
     final private double power = 0.5;
     private int targetPosition;
 
@@ -534,7 +540,7 @@ class LiftSystem {
     }
 
     public void setLiftEncoderPos(int newLiftEncoderPos) {
-        if (newLiftEncoderPos >= bottom && newLiftEncoderPos <= top) {
+        if (newLiftEncoderPos <= top) {
             this.targetPosition = newLiftEncoderPos;
             lift4front.setPower(power);
             lift5rear.setPower(power);
@@ -551,6 +557,11 @@ class LiftSystem {
             lift4front.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             lift5rear.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
+    }
+
+    public void zeroLift(){
+        lift4front.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lift5rear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
 }
 
