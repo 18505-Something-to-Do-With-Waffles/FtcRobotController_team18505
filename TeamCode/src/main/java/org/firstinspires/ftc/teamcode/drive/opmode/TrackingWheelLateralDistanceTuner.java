@@ -75,7 +75,7 @@ public class TrackingWheelLateralDistanceTuner extends LinearOpMode {
         if (!(drive.getLocalizer() instanceof StandardTrackingWheelLocalizer)) {
             RobotLog.setGlobalErrorMsg("StandardTrackingWheelLocalizer is not being set in the "
                     + "drive class. Ensure that \"setLocalizer(new StandardTrackingWheelLocalizer"
-                    + "(hardwareMap));\" is called in SampleMecanumDrive.java");
+                    + "(hardwareMap));\" is called in WaffleDrive.java");
         }
 
         telemetry.addLine("Prior to beginning the routine, please read the directions "
