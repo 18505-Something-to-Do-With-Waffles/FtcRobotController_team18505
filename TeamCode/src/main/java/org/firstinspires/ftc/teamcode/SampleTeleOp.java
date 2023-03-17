@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+@TeleOp(name = "Sample TeleOp")
 public class SampleTeleOp extends LinearOpMode {
     TeleOpControl control;
     Controller controller1;
@@ -21,6 +23,7 @@ public class SampleTeleOp extends LinearOpMode {
 
         while (opModeIsActive()) {
             control.gripperTeleOp(controller1);
+            control.liftTeleOp(controller1);
         }
     }
 }

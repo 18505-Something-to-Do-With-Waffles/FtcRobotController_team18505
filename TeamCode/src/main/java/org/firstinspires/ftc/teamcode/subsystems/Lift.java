@@ -10,10 +10,10 @@ public class Lift {
     private DcMotor frontLift;
 
     // define lift positions
-    final private int[] polePos = {0, 610, 1075, 1460};
+    final private int[] polePosList = {0, 610, 1075, 1460};
     final private  int[] coneStackPos = {0, 45, 90, 135, 180, 360};
 
-    int PolePosition;
+    public int polePosition;
 
     public Lift(HardwareMap hardwareMap){
         frontLift = hardwareMap.get(DcMotor.class, "lift4front");
@@ -28,14 +28,26 @@ public class Lift {
     }
 
     public void setPolePosition(int newPolePos){
-        this.setPosition(polePos[newPolePos], 1);
-        PolePosition = newPolePos;
+        this.setPosition(polePosList[newPolePos], 1);
+        polePosition = newPolePos;
     }
 
     public void checkForZero(){
-        if (PolePosition == 0 && Math.abs(rearLift.getCurrentPosition()) < 10){
+        if (polePosition == 0 && Math.abs(rearLift.getCurrentPosition()) < 10){
             frontLift.setPower(0);
             rearLift.setPower(0);
+        }
+    }
+
+    public void up(){
+        if (polePosition < polePosList.length - 1){
+            this.setPolePosition(polePosition + 1);
+        }
+    }
+
+    public void down(){
+        if (polePosition > 0){
+            this.setPolePosition(0);
         }
     }
     

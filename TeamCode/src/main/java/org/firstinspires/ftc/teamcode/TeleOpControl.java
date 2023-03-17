@@ -14,7 +14,7 @@ public class TeleOpControl {
         gripper = new Gripper(hardwareMap);
         lift = new Lift(hardwareMap);
     }
-    public void gripperTeleOp(Controller controller){
+    public void gripperTeleOp(Controller controller) {
         Boolean open = false;
         if (controller.BOnce()){
             if (open){
@@ -24,6 +24,17 @@ public class TeleOpControl {
             else{
                 open = true;
                 gripper.close();
+            }
+        }
+    }
+
+    public void liftTeleOp(Controller controller) {
+        if (controller.dpadUpOnce()) {
+            if(controller.dpadUpOnce()){
+                lift.up();
+            }
+            else if (controller.dpadDownOnce()) {
+                lift.down();
             }
         }
     }
