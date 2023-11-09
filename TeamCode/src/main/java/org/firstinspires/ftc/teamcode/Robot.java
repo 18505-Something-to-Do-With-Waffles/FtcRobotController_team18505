@@ -23,22 +23,22 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaCurrentGame;
 public class Robot {
 
     // Instantiate Telemetry
-    private Telemetry telemetry;
+    Telemetry telemetry;
 
     // Instantiate Robot Systems
-    private Intake intake;
-    private Lift lift;
-    private Launcher launcher;
+    Intake intake;
+    Lift lift;
+    Launcher launcher;
     public Robot(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
-        intake = new Intake(hardwareMap);
-        lift = new Lift(hardwareMap, 0.5);
-        launcher = new Launcher(hardwareMap);
+        this.intake = new Intake(hardwareMap);
+        this.lift = new Lift(hardwareMap, 0.5);
+        this.launcher = new Launcher(hardwareMap);
     }
 }
 
 class Intake {
-    private DcMotor intake;
+    DcMotor intake;
     public Intake(HardwareMap hardwareMap) {
         intake = hardwareMap.get(DcMotor.class, "intake");
     }
@@ -51,7 +51,7 @@ class Intake {
 }
 
 class Lift {
-    private DcMotor lift;
+    DcMotor lift;
     double power;
     public Lift (HardwareMap hardwareMap, double globalPower) {
         // Initializing lift motor and power
